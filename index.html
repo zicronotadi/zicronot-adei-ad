@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>זכרונות עדי עד | צילום מגנטים ואירועים</title>
+<meta name="description" content="זכרונות עדי עד - צילום מגנטים ואירועים. גלריית תמונות, המלצות ופרטי התקשרות.">
+<meta property="og:title" content="זכרונות עדי עד">
+<meta property="og:description" content="צילום מגנטים ואירועים">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;600;700&family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#faf7f2; --ink:#2b2620; --muted:#6b6257; --line:#e6ddd0;
+  --accent:#8a7250; --card:#fff; --radius:18px; --radius-sm:10px;
+  --shadow:0 10px 30px rgba(40,30,10,.08);
+}
+:root[data-contrast="1"]{--bg:#000;--ink:#fff;--muted:#eee;--line:#666;--card:#111;--accent:#ffd166;}
+:root[data-gray="1"] *{filter:grayscale(1)!important;}
+:root[data-font="1"] *{font-family:Arial,sans-serif!important;}
+:root[data-links="1"] a{outline:2px solid var(--accent)!important; text-decoration:underline!important;}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth; scroll-padding-top:70px;}
+:root[data-noanim="1"] *{animation:none!important; transition:none!important; scroll-behavior:auto!important;}
+body{font-family:'Heebo',Arial,sans-serif; background:var(--bg); color:var(--ink); line-height:1.65;
+  font-size:calc(16px * var(--fs,1));}
+img{max-width:100%; display:block; border-radius:var(--radius-sm);}
+a{color:inherit;}
+h1,h2,h3{font-family:'Frank Ruhl Libre',serif; font-weight:600;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:.95rem; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); width:100%;}
+label{font-size:.85rem; color:var(--muted); display:block; margin-bottom:4px;}
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible{outline:3px solid var(--accent); outline-offset:3px;}
+
+header.hero{position:relative; height:92vh; min-height:520px; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+header.hero .bg{position:absolute; inset:0; background-size:cover; background-position:center; transform:scale(1.02);}
+header.hero .overlay{position:absolute; inset:0; background:linear-gradient(180deg,rgba(20,15,5,.25),rgba(20,15,5,.55));}
+header.hero .content{position:relative; text-align:center; color:#fff; padding:0 20px;}
+header.hero h1{font-size:clamp(2.4rem,6vw,4.2rem); letter-spacing:.5px;}
+header.hero p{font-size:clamp(1.05rem,2.2vw,1.4rem); margin-top:.8rem; font-weight:300; letter-spacing:1px;}
+
+nav.cards{max-width:1200px; margin:-70px auto 40px; padding:0 20px; position:relative; z-index:3;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+nav.cards a{position:relative; height:190px; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
+  background-size:cover; background-position:center; display:flex; align-items:flex-end; padding:18px; color:#fff;
+  transition:transform .35s ease;}
+nav.cards a:hover{transform:translateY(-4px);}
+nav.cards a::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.55));}
+nav.cards a span{position:relative; font-family:'Frank Ruhl Libre',serif; font-size:1.3rem;}
+@media(max-width:760px){nav.cards{grid-template-columns:1fr; margin-top:-40px;}}
+
+section{max-width:1200px; margin:0 auto; padding:70px 20px;}
+section h2{font-size:2rem; text-align:center; margin-bottom:8px;}
+section .lead{text-align:center; color:var(--muted); max-width:560px; margin:0 auto 40px;}
+
+.cats{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:30px;}
+.cats button{padding:9px 18px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:.9rem;}
+.cats button.active{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px;}
+.grid figure{cursor:pointer; overflow:hidden; border-radius:var(--radius-sm); aspect-ratio:4/5; margin:0; position:relative;}
+.grid img{width:100%; height:100%; object-fit:cover; transition:transform .4s;}
+.grid figure:hover img{transform:scale(1.06);}
+
+.about{display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center;}
+.about img{border-radius:var(--radius); box-shadow:var(--shadow); aspect-ratio:3/4; object-fit:cover; width:100%;}
+@media(max-width:760px){.about{grid-template-columns:1fr;}}
+
+.reviews-wrap{overflow-x:auto; scrollbar-width:thin;}
+.reviews{display:flex; gap:18px; padding-bottom:10px;}
+.rcard{min-width:280px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);}
+.rcard img{width:52px; height:52px; border-radius:50%; object-fit:cover; margin-bottom:10px;}
+.rcard .name{font-weight:600; margin-top:8px;}
+
+footer{border-top:1px solid var(--line); padding:40px 20px; text-align:center; color:var(--muted); font-size:.9rem;}
+footer .links{display:flex; gap:16px; justify-content:center; margin:14px 0; flex-wrap:wrap;}
+footer button.link{background:none; border:0; text-decoration:underline; color:var(--muted); font-size:.9rem;}
+
+.floaters{position:fixed; bottom:20px; left:16px; z-index:50; display:flex; flex-direction:column; gap:12px; align-items:flex-start;}
+.fab{width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); border:0; color:#fff;}
+.fab.wa{background:#25D366;} .fab.ph{background:var(--ink);} .fab.sh{background:var(--accent);}
+.fab.ig{background:radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%);}
+.fab.fb{background:#1877F2;}
+.share-menu{display:none; flex-direction:column; gap:8px;}
+.share-menu.open{display:flex;}
+
+.a11y-btn{position:fixed; bottom:20px; right:16px; z-index:50; width:52px; height:52px; border-radius:50%; background:var(--ink); color:var(--bg); border:0; font-size:1.3rem; box-shadow:var(--shadow);}
+.panel{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:100; padding:16px;}
+.panel.open{display:flex;}
+.panel .box{background:var(--card); border-radius:var(--radius); max-width:420px; width:100%; max-height:85vh; overflow:auto; padding:26px;}
+.panel h3{margin-bottom:16px;}
+.panel .row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line);}
+.panel button.close{float:left; background:none; border:0; font-size:1.4rem;}
+.toggle{width:44px; height:24px; background:var(--line); border-radius:99px; position:relative; border:0;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute; top:2px; right:2px; width:20px; height:20px; background:#fff; border-radius:50%; transition:.2s;}
+.toggle.on::after{right:22px;}
+
+.lightbox{position:fixed; inset:0; background:rgba(10,8,4,.94); display:none; align-items:center; justify-content:center; z-index:200; flex-direction:column;}
+.lightbox.open{display:flex;}
+.lightbox img{max-height:78vh; max-width:92vw; object-fit:contain; border-radius:10px;}
+.lightbox .ctrl{display:flex; gap:24px; margin-top:18px;}
+.lightbox button{background:rgba(255,255,255,.12); color:#fff; border:0; width:44px; height:44px; border-radius:50%; font-size:1.2rem;}
+
+.admin-bar{position:sticky; top:0; z-index:80; background:var(--ink); color:#fff; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; font-size:.85rem; gap:10px; flex-wrap:wrap;}
+.admin-only{display:none;} body.admin .admin-only{display:inline-flex;}
+.btn{background:var(--ink); color:var(--bg); border:0; padding:8px 16px; border-radius:999px; font-size:.85rem;}
+.btn.light{background:var(--bg); color:var(--ink); border:1px solid var(--line);}
+.btn.danger{background:#b3402f; color:#fff;}
+.btn.sm{padding:5px 10px; font-size:.78rem;}
+
+/* dashboard */
+#dashboard{position:fixed; inset:0; z-index:150; background:var(--bg); overflow-y:auto; display:none;}
+#dashboard.open{display:block;}
+.dash-head{position:sticky; top:0; background:var(--ink); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; z-index:2;}
+.dash-body{max-width:900px; margin:0 auto; padding:30px 20px 90px;}
+.dash-sec{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px; margin-bottom:22px;}
+.dash-sec h3{margin-bottom:14px; font-size:1.2rem;}
+.field{margin-bottom:14px;}
+.thumb-row{display:flex; align-items:center; gap:14px; margin-bottom:10px; flex-wrap:wrap;}
+.thumb{width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--line);}
+.dgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-top:12px;}
+.dcard{border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--bg);}
+.dcard img{width:100%; height:110px; object-fit:cover;}
+.dcard .dc-body{padding:8px; font-size:.78rem;}
+.dcard .dc-actions{display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;}
+.chip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:.8rem; margin:3px;}
+.chip button{background:none; border:0; color:var(--muted); font-size:.9rem;}
+.rev-row{border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px;}
+.toast{position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; padding:12px 22px; border-radius:999px; font-size:.9rem; opacity:0; pointer-events:none; transition:.3s; z-index:300;}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="admin-bar admin-only" style="display:none" id="adminBar">
+  <span>מחוברים כמנהל</span>
+  <div style="display:flex; gap:8px;">
+    <button class="btn light" onclick="openDashboard()">פתיחת עורך האתר</button>
+    <button class="btn light" onclick="signOutAdmin()">התנתק</button>
+  </div>
+</div>
+
+<header class="hero" id="home">
+  <div class="bg" id="heroBg"></div>
+  <div class="overlay"></div>
+  <div class="content">
+    <h1 id="bizName">זכרונות עדי עד</h1>
+    <p id="bizSub">צילום מגנטים ואירועים</p>
+  </div>
+</header>
+
+<nav class="cards" aria-label="ניווט ראשי">
+  <a href="#gallery"><div class="bg" id="cardBg-gallery" style="position:absolute;inset:0;background-size:cover;background-position:center"></div><span>גלריה</span></a>
+  <a href="#about"><div class="bg" id="cardBg-about" style="position:absolute;inset:0;background-size:cover;background-position:center"></div><span>אודותינו</span></a>
+  <a href="#reviews"><div class="bg" id="cardBg-reviews" style="position:absolute;inset:0;background-size:cover;background-position:center"></div><span>המלצות</span></a>
+</nav>
+
+<section id="gallery">
+  <h2>גלריה</h2>
+  <p class="lead">מבחר מתוך העבודות שלנו</p>
+  <div class="cats" id="catBar"></div>
+  <div class="grid" id="galleryGrid"></div>
+</section>
+
+<section id="about">
+  <h2>אודותינו</h2>
+  <div class="about">
+    <div><img id="aboutImg" src="" alt="תמונת בעל העסק"></div>
+    <div><p id="aboutText"></p></div>
+  </div>
+</section>
+
+<section id="reviews">
+  <h2>המלצות</h2>
+  <p class="lead">מה הלקוחות שלנו אומרים</p>
+  <div class="reviews-wrap"><div class="reviews" id="reviewsRow"></div></div>
+</section>
+
+<footer>
+  <strong id="footName">זכרונות עדי עד</strong>
+  <div class="links">
+    <a id="footPhone" href="">התקשרו אלינו</a>
+    <a id="footIg" href="" target="_blank" rel="noopener">אינסטגרם</a>
+    <a id="footFb" href="" target="_blank" rel="noopener">פייסבוק</a>
+    <button class="link" onclick="openPanel('a11yStatementPanel')">הצהרת נגישות</button>
+    <button class="link" id="adminEntry" onclick="handleAdminEntry()">כניסת מנהל</button>
+  </div>
+  <div id="googleBtnWrap" style="display:flex; justify-content:center; margin-top:10px;"></div>
+</footer>
+
+<!-- floating buttons -->
+<div class="floaters">
+  <a class="fab wa" id="waBtn" href="#" target="_blank" rel="noopener" aria-label="שליחת הודעת וואטסאפ">
+    <svg viewBox="0 0 32 32" width="26" height="26" fill="#fff" aria-hidden="true"><path d="M16.004 3C9.376 3 4 8.373 4 15c0 2.34.655 4.527 1.792 6.39L4 29l7.81-1.75A11.94 11.94 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3zm0 21.7c-1.95 0-3.77-.57-5.3-1.55l-.38-.24-4.63 1.04 1.02-4.5-.25-.4A9.63 9.63 0 0 1 5.3 15c0-5.9 4.8-10.7 10.7-10.7S26.7 9.1 26.7 15 21.9 24.7 16 24.7zm5.86-8.02c-.32-.16-1.9-.94-2.2-1.04-.3-.1-.5-.16-.72.16-.21.32-.82 1.04-1 1.25-.19.21-.37.24-.69.08-.32-.16-1.34-.5-2.55-1.58-.94-.84-1.58-1.87-1.76-2.19-.19-.32-.02-.49.14-.65.14-.14.32-.37.48-.55.16-.19.21-.32.32-.53.1-.21.05-.4-.03-.55-.08-.16-.72-1.75-.99-2.4-.26-.62-.53-.54-.72-.55h-.62c-.21 0-.55.08-.84.4-.29.32-1.1 1.08-1.1 2.62 0 1.55 1.13 3.04 1.29 3.25.16.21 2.22 3.4 5.38 4.77.75.32 1.34.52 1.8.66.76.24 1.44.21 1.99.13.61-.09 1.9-.78 2.16-1.53.27-.75.27-1.4.19-1.53-.08-.13-.29-.21-.61-.37z"/></svg>
+  </a>
+  <a class="fab ph" id="phBtn" href="#" aria-label="התקשרות טלפונית">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.3 1.1l-2.2 2.1z"/></svg>
+  </a>
+  <div>
+    <button class="fab sh" onclick="document.getElementById('shareMenu').classList.toggle('open')" aria-label="שיתוף">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" aria-hidden="true"><path d="M18 8a3 3 0 1 0-2.92-3.7l-7.05 3.9a3 3 0 1 0 0 3.6l7.05 3.9A3 3 0 1 0 16 13c0-.3-.05-.58-.13-.85l-7.02-3.88a3 3 0 0 0 0-.54l7.02-3.88c.32.15.68.25 1.13.25z"/></svg>
+    </button>
+    <div class="share-menu" id="shareMenu">
+      <a class="fab ig" id="igBtn" href="#" target="_blank" rel="noopener" aria-label="אינסטגרם">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.85.07 1.17.05 2.2.25 2.95.53a5.9 5.9 0 0 1 2.13 1.39 5.9 5.9 0 0 1 1.39 2.13c.28.75.48 1.78.53 2.95.06 1.25.07 1.65.07 4.85s0 3.6-.07 4.85c-.05 1.17-.25 2.2-.53 2.95a5.9 5.9 0 0 1-1.39 2.13 5.9 5.9 0 0 1-2.13 1.39c-.75.28-1.78.48-2.95.53-1.25.06-1.65.07-4.85.07s-3.6 0-4.85-.07c-1.17-.05-2.2-.25-2.95-.53a5.9 5.9 0 0 1-2.13-1.39 5.9 5.9 0 0 1-1.39-2.13c-.28-.75-.48-1.78-.53-2.95C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.85c.05-1.17.25-2.2.53-2.95A5.9 5.9 0 0 1 4.19 2.07a5.9 5.9 0 0 1 2.13-1.39c.75-.28 1.78-.48 2.95-.53C10.4 2.2 10.8 2.2 12 2.2zm0 3.06a6.74 6.74 0 1 0 0 13.48 6.74 6.74 0 0 0 0-13.48zm0 11.12a4.38 4.38 0 1 1 0-8.76 4.38 4.38 0 0 1 0 8.76zm7.02-11.39a1.58 1.58 0 1 1-3.15 0 1.58 1.58 0 0 1 3.15 0z"/></svg>
+      </a>
+      <a class="fab fb" id="fbBtn" href="#" target="_blank" rel="noopener" aria-label="פייסבוק">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/></svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<button class="a11y-btn" onclick="openPanel('a11yPanel')" aria-label="נגישות">♿</button>
+
+<div class="panel" id="a11yPanel">
+  <div class="box">
+    <button class="close" onclick="closePanel('a11yPanel')" aria-label="סגור">×</button>
+    <h3>הגדרות נגישות</h3>
+    <div class="row"><span>הגדלת טקסט</span><button class="btn" onclick="setFS(0.1)">A+</button></div>
+    <div class="row"><span>הקטנת טקסט</span><button class="btn" onclick="setFS(-0.1)">A-</button></div>
+    <div class="row"><span>ניגודיות גבוהה</span><button class="toggle" id="t-contrast" onclick="toggleA('contrast')"></button></div>
+    <div class="row"><span>גווני אפור</span><button class="toggle" id="t-gray" onclick="toggleA('gray')"></button></div>
+    <div class="row"><span>הדגשת קישורים</span><button class="toggle" id="t-links" onclick="toggleA('links')"></button></div>
+    <div class="row"><span>גופן קריא</span><button class="toggle" id="t-font" onclick="toggleA('font')"></button></div>
+    <div class="row"><span>עצירת אנימציות</span><button class="toggle" id="t-noanim" onclick="toggleA('noanim')"></button></div>
+    <button class="btn" style="margin-top:16px" onclick="resetA11y()">איפוס הגדרות</button>
+  </div>
+</div>
+
+<div class="panel" id="a11yStatementPanel">
+  <div class="box">
+    <button class="close" onclick="closePanel('a11yStatementPanel')" aria-label="סגור">×</button>
+    <h3>הצהרת נגישות</h3>
+    <p id="a11yStatementText"></p>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-label="תצוגת תמונה מוגדלת">
+  <img id="lbImg" src="" alt="">
+  <div class="ctrl">
+    <button onclick="lbNav(1)" aria-label="הקודם">›</button>
+    <button onclick="closeLightbox()" aria-label="סגור">×</button>
+    <button onclick="lbNav(-1)" aria-label="הבא">‹</button>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-head">
+    <strong>עורך האתר — זכרונות עדי עד</strong>
+    <button class="btn light" onclick="closeDashboard()">חזרה לאתר</button>
+  </div>
+  <div class="dash-body">
+
+    <div class="dash-sec">
+      <h3>מיתוג</h3>
+      <div class="field"><label>שם העסק</label><input id="d-bizName"></div>
+      <div class="field"><label>כותרת משנה</label><input id="d-bizSub"></div>
+      <div class="thumb-row"><img class="thumb" id="d-heroThumb" src=""><button class="btn sm" onclick="dChangeImage('hero')">העלאת תמונת רקע (Hero)</button></div>
+      <button class="btn" onclick="dSaveBranding()">שמירה</button>
+    </div>
+
+    <div class="dash-sec">
+      <h3>כרטיסי ניווט ראשיים</h3>
+      <div class="thumb-row"><img class="thumb" id="d-cardThumb-gallery" src=""><span>כרטיס גלריה</span><button class="btn sm" onclick="dChangeImage('card:gallery')">החלפה</button></div>
+      <div class="thumb-row"><img class="thumb" id="d-cardThumb-about" src=""><span>כרטיס אודותינו</span><button class="btn sm" onclick="dChangeImage('card:about')">החלפה</button></div>
+      <div class="thumb-row"><img class="thumb" id="d-cardThumb-reviews" src=""><span>כרטיס המלצות</span><button class="btn sm" onclick="dChangeImage('card:reviews')">החלפה</button></div>
+    </div>
+
+    <div class="dash-sec">
+      <h3>קטגוריות גלריה</h3>
+      <div id="d-catChips"></div>
+      <div class="thumb-row" style="margin-top:10px">
+        <input id="d-newCat" placeholder="שם קטגוריה חדשה" style="max-width:220px">
+        <button class="btn sm" onclick="dAddCategory()">הוספת קטגוריה</button>
+      </div>
+    </div>
+
+    <div class="dash-sec">
+      <h3>גלריה</h3>
+      <div class="thumb-row">
+        <label style="width:auto;margin:0">קטגוריה להעלאה:</label>
+        <select id="d-uploadCat" style="max-width:220px"></select>
+        <button class="btn sm" onclick="dUploadPhotos()">העלאת תמונות</button>
+      </div>
+      <div class="dgrid" id="d-galleryGrid"></div>
+    </div>
+
+    <div class="dash-sec">
+      <h3>אודותינו</h3>
+      <div class="thumb-row"><img class="thumb" id="d-aboutThumb" src=""><button class="btn sm" onclick="dChangeImage('about')">החלפת תמונה</button></div>
+      <div class="field"><label>טקסט אודות</label><textarea id="d-aboutText" rows="4"></textarea></div>
+      <button class="btn" onclick="dSaveAbout()">שמירה</button>
+    </div>
+
+    <div class="dash-sec">
+      <h3>המלצות</h3>
+      <div class="field"><label>כיוון קרוסלה</label>
+        <select id="d-revDir"><option value="rtl">ימין לשמאל (RTL)</option><option value="ltr">שמאל לימין (LTR)</option></select>
+      </div>
+      <button class="btn sm" onclick="dSaveRevDir()">שמירה</button>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)">
+      <div id="d-reviewsList"></div>
+      <div class="rev-row">
+        <div class="field"><label>שם לקוח</label><input id="d-newRevName"></div>
+        <div class="field"><label>תוכן ההמלצה</label><textarea id="d-newRevText" rows="2"></textarea></div>
+        <div class="thumb-row"><img class="thumb" id="d-newRevThumb" src=""><button class="btn sm" onclick="dPickReviewPhoto('new')">העלאת תמונה (רשות)</button></div>
+        <button class="btn" onclick="dAddReview()">הוספת המלצה</button>
+      </div>
+    </div>
+
+    <div class="dash-sec">
+      <h3>פרטי התקשרות</h3>
+      <div class="field"><label>טלפון</label><input id="d-phone"></div>
+      <div class="field"><label>מספר וואטסאפ (בפורמט בינלאומי, לדוגמה 972534280470)</label><input id="d-wa"></div>
+      <div class="field"><label>קישור אינסטגרם</label><input id="d-ig"></div>
+      <div class="field"><label>קישור פייסבוק</label><input id="d-fb"></div>
+      <button class="btn" onclick="dSaveContact()">שמירה</button>
+    </div>
+
+    <div class="dash-sec">
+      <h3>הצהרת נגישות</h3>
+      <div class="field"><textarea id="d-a11yStatement" rows="4"></textarea></div>
+      <button class="btn" onclick="dSaveA11yStatement()">שמירה</button>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============
+   FIREBASE_CONFIG: paste your Firebase project's config here to enable
+   REAL cross-visitor persistence + server-verified admin (Firestore
+   security rules keyed on the signed-in email). Without it, the site
+   still runs fully — admin CRUD included — using this browser's
+   localStorage only. GOOGLE_CLIENT_ID: paste your OAuth Web Client ID. */
+const ADMIN_EMAIL = "adilevin1112@gmail.com";
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const FIREBASE_CONFIG = { apiKey:"YOUR_FIREBASE_API_KEY", authDomain:"YOUR_PROJECT.firebaseapp.com", projectId:"YOUR_PROJECT", storageBucket:"YOUR_PROJECT.appspot.com", messagingSenderId:"", appId:"" };
+
+let fbReady=false, db=null, fbAuth=null;
+try{
+  if(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey!=="YOUR_FIREBASE_API_KEY" && window.firebase){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore(); fbAuth = firebase.auth(); fbReady = true;
+  }
+}catch(e){ console.warn("Firebase not configured:", e); }
+
+function defaultState(){
+  const cats=["מגנטים","בר/בת מצווה","בריתות","אירועים משפחתיים","אירועים פרטיים","צילום סטילס"];
+  const PH=(t)=>`https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=60&sig=${encodeURIComponent(t)}`;
+  return {
+    bizName:"זכרונות עדי עד", bizSub:"צילום מגנטים ואירועים",
+    hero: PH("hero"),
+    cards: {gallery:PH("g"), about:PH("a"), reviews:PH("r")},
+    about: {img:PH("about"), text:"טקסט לדוגמה — יש לערוך דרך עורך האתר ולהוסיף תיאור אמיתי של העסק."},
+    categories: cats,
+    gallery: cats.map((c,i)=>({id:"p"+i, cat:c, src:PH(c)})),
+    reviews: [],
+    reviewsDir: "rtl",
+    contact: {phone:"0534280470", wa:"972534280470", ig:"", fb:""},
+    a11yStatement: "טקסט הצהרת הנגישות — לעריכה על ידי המנהל."
+  };
+}
+let S = defaultState();
+
+async function loadState(){
+  if(fbReady){
+    try{
+      const snap = await db.collection("site").doc("content").get();
+      if(snap.exists) S = Object.assign(defaultState(), snap.data());
+      db.collection("site").doc("content").onSnapshot(s=>{ if(s.exists){ S=Object.assign(defaultState(), s.data()); render(); if(isAdmin) fillDashboard(); }});
+      return;
+    }catch(e){ console.warn("Firestore read failed, falling back to local:",e); }
+  }
+  try{ S = JSON.parse(localStorage.getItem("zea_state")) || defaultState(); }catch(e){ S = defaultState(); }
+}
+async function saveState(){
+  try{
+    if(fbReady){ await db.collection("site").doc("content").set(S); }
+    else{ localStorage.setItem("zea_state", JSON.stringify(S)); }
+    showToast("השינויים נשמרו בהצלחה");
+  }catch(e){ console.error(e); showToast("שגיאה בשמירה — נסו שוב"); }
+}
+function showToast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(window._toastT); window._toastT=setTimeout(()=>t.classList.remove("show"),2400);
+}
+
+/* ============ PUBLIC RENDER ============ */
+function render(){
+  document.getElementById("heroBg").style.backgroundImage = `url(${S.hero})`;
+  document.getElementById("cardBg-gallery").style.backgroundImage = `url(${S.cards.gallery})`;
+  document.getElementById("cardBg-about").style.backgroundImage = `url(${S.cards.about})`;
+  document.getElementById("cardBg-reviews").style.backgroundImage = `url(${S.cards.reviews})`;
+  document.getElementById("bizName").textContent = S.bizName;
+  document.getElementById("bizSub").textContent = S.bizSub;
+  document.getElementById("footName").textContent = S.bizName;
+  document.getElementById("aboutImg").src = S.about.img;
+  document.getElementById("aboutImg").alt = "תמונת " + S.bizName;
+  document.getElementById("aboutText").textContent = S.about.text;
+  document.getElementById("a11yStatementText").textContent = S.a11yStatement;
+
+  const waDigits = (S.contact.wa||"").replace(/\D/g,"");
+  document.getElementById("waBtn").href = "https://wa.me/" + waDigits;
+  document.getElementById("phBtn").href = "tel:" + S.contact.phone.replace(/\D/g,"");
+  document.getElementById("footPhone").textContent = "התקשרו: " + S.contact.phone;
+  document.getElementById("footPhone").href = "tel:" + S.contact.phone.replace(/\D/g,"");
+  ["footIg","igBtn"].forEach(id=>document.getElementById(id).href = S.contact.ig || "#");
+  ["footFb","fbBtn"].forEach(id=>document.getElementById(id).href = S.contact.fb || "#");
+
+  renderCats(); renderGallery(); renderReviews();
+}
+let activeCat = "all";
+function renderCats(){
+  const bar = document.getElementById("catBar"); bar.innerHTML = "";
+  const mk = (label,val)=>{ const b=document.createElement("button"); b.textContent=label; b.className = activeCat===val?"active":"";
+    b.onclick=()=>{activeCat=val; renderCats(); renderGallery();}; bar.appendChild(b); };
+  mk("הכל","all"); S.categories.forEach(c=>mk(c,c));
+}
+function renderGallery(){
+  const grid = document.getElementById("galleryGrid"); grid.innerHTML = "";
+  const photos = S.gallery.filter(p=>activeCat==="all"||p.cat===activeCat);
+  photos.forEach((p,idx)=>{
+    const fig=document.createElement("figure");
+    fig.innerHTML = `<img src="${p.src}" alt="${p.cat} - ${S.bizName}" loading="lazy">`;
+    fig.onclick=()=>openLightbox(photos, idx);
+    grid.appendChild(fig);
+  });
+}
+function renderReviews(){
+  const row = document.getElementById("reviewsRow");
+  document.getElementById("reviews").style.direction = S.reviewsDir;
+  row.innerHTML = "";
+  S.reviews.forEach(r=>{
+    const c=document.createElement("div"); c.className="rcard";
+    c.innerHTML = `${r.img?`<img src="${r.img}" alt="${r.name}">`:""}<div class="name">${r.name}</div><p>${r.text}</p>`;
+    row.appendChild(c);
+  });
+}
+
+/* ============ LIGHTBOX ============ */
+let lbList=[], lbIdx=0;
+function openLightbox(list,idx){ lbList=list; lbIdx=idx; document.getElementById("lbImg").src=list[idx].src; document.getElementById("lightbox").classList.add("open"); }
+function closeLightbox(){ document.getElementById("lightbox").classList.remove("open"); }
+function lbNav(d){ lbIdx=(lbIdx+d+lbList.length)%lbList.length; document.getElementById("lbImg").src=lbList[lbIdx].src; }
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("lightbox").classList.contains("open")) return;
+  if(e.key==="Escape") closeLightbox();
+  if(e.key==="ArrowRight") lbNav(1);
+  if(e.key==="ArrowLeft") lbNav(-1);
+});
+
+/* ============ PANELS ============ */
+function openPanel(id){ document.getElementById(id).classList.add("open"); }
+function closePanel(id){ document.getElementById(id).classList.remove("open"); }
+
+/* ============ ACCESSIBILITY ============ */
+const A11Y_KEYS=["contrast","gray","links","font","noanim"];
+function loadA11y(){
+  const s = JSON.parse(localStorage.getItem("zea_a11y")||"{}");
+  document.documentElement.style.setProperty("--fs", s.fs||1);
+  A11Y_KEYS.forEach(k=>{ if(s[k]) document.documentElement.setAttribute("data-"+k,"1");
+    document.getElementById("t-"+k)?.classList.toggle("on", !!s[k]); });
+}
+function saveA11y(patch){ const s=JSON.parse(localStorage.getItem("zea_a11y")||"{}"); Object.assign(s,patch); localStorage.setItem("zea_a11y", JSON.stringify(s)); }
+function setFS(delta){ const s=JSON.parse(localStorage.getItem("zea_a11y")||"{}"); const fs=Math.min(1.6, Math.max(0.8,(s.fs||1)+delta));
+  document.documentElement.style.setProperty("--fs", fs); saveA11y({fs}); }
+function toggleA(key){ const on=document.documentElement.getAttribute("data-"+key)==="1";
+  if(on) document.documentElement.removeAttribute("data-"+key); else document.documentElement.setAttribute("data-"+key,"1");
+  document.getElementById("t-"+key).classList.toggle("on", !on); saveA11y({[key]:!on}); }
+function resetA11y(){ localStorage.removeItem("zea_a11y"); A11Y_KEYS.forEach(k=>document.documentElement.removeAttribute("data-"+k));
+  document.documentElement.style.setProperty("--fs",1); A11Y_KEYS.forEach(k=>document.getElementById("t-"+k).classList.remove("on")); }
+
+/* ============ AUTH ============ */
+let isAdmin=false;
+function decodeJwt(token){ return JSON.parse(decodeURIComponent(escape(atob(token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))))); }
+async function onGoogleSignIn(resp){
+  const payload = decodeJwt(resp.credential);
+  if(payload.email !== ADMIN_EMAIL || !payload.email_verified){ alert("חשבון Google זה אינו מורשה לניהול האתר."); return; }
+  if(fbReady){
+    try{ const cred = firebase.auth.GoogleAuthProvider.credential(resp.credential); await fbAuth.signInWithCredential(cred); }
+    catch(e){ console.warn("Firebase auth sign-in failed:",e); }
+  }
+  isAdmin=true; document.body.classList.add("admin");
+  document.getElementById("adminBar").style.display="flex";
+  render();
+}
+function handleAdminEntry(){ if(!isAdmin) document.getElementById("googleBtnWrap").scrollIntoView({behavior:"smooth"}); else openDashboard(); }
+function signOutAdmin(){
+  isAdmin=false; document.body.classList.remove("admin");
+  document.getElementById("adminBar").style.display="none";
+  closeDashboard();
+  if(fbReady && fbAuth.currentUser) fbAuth.signOut();
+  render();
+}
+function fileToDataUrl(cb, multiple){
+  const inp=document.createElement("input"); inp.type="file"; inp.accept="image/*"; if(multiple) inp.multiple=true;
+  inp.onchange=()=>{ const files=[...inp.files]; if(!files.length) return;
+    let out=[]; let n=0;
+    files.forEach(f=>{ const r=new FileReader(); r.onload=()=>{ out.push(r.result); n++; if(n===files.length) cb(multiple?out:out[0]); }; r.readAsDataURL(f); }); };
+  inp.click();
+}
+
+/* ============ DASHBOARD ============ */
+function openDashboard(){ fillDashboard(); document.getElementById("dashboard").classList.add("open"); }
+function closeDashboard(){ document.getElementById("dashboard").classList.remove("open"); }
+function fillDashboard(){
+  document.getElementById("d-bizName").value = S.bizName;
+  document.getElementById("d-bizSub").value = S.bizSub;
+  document.getElementById("d-heroThumb").src = S.hero;
+  document.getElementById("d-cardThumb-gallery").src = S.cards.gallery;
+  document.getElementById("d-cardThumb-about").src = S.cards.about;
+  document.getElementById("d-cardThumb-reviews").src = S.cards.reviews;
+  document.getElementById("d-aboutThumb").src = S.about.img;
+  document.getElementById("d-aboutText").value = S.about.text;
+  document.getElementById("d-revDir").value = S.reviewsDir;
+  document.getElementById("d-phone").value = S.contact.phone;
+  document.getElementById("d-wa").value = S.contact.wa;
+  document.getElementById("d-ig").value = S.contact.ig;
+  document.getElementById("d-fb").value = S.contact.fb;
+  document.getElementById("d-a11yStatement").value = S.a11yStatement;
+
+  const chips = document.getElementById("d-catChips"); chips.innerHTML="";
+  S.categories.forEach(c=>{
+    const s=document.createElement("span"); s.className="chip";
+    s.innerHTML = `${c} <button onclick="dRenameCategory('${c.replace(/'/g,"\\'")}')">✎</button><button onclick="dDeleteCategory('${c.replace(/'/g,"\\'")}')">🗑</button>`;
+    chips.appendChild(s);
+  });
+  const sel = document.getElementById("d-uploadCat"); sel.innerHTML="";
+  S.categories.forEach(c=>{ const o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o); });
+
+  const g = document.getElementById("d-galleryGrid"); g.innerHTML="";
+  S.gallery.forEach((p,i)=>{
+    const d=document.createElement("div"); d.className="dcard";
+    d.innerHTML = `<img src="${p.src}"><div class="dc-body">${p.cat}
+      <div class="dc-actions">
+        <button class="btn sm" onclick="dMovePhoto('${p.id}',-1)">▲</button>
+        <button class="btn sm" onclick="dMovePhoto('${p.id}',1)">▼</button>
+        <button class="btn sm" onclick="dReplacePhoto('${p.id}')">החלפה</button>
+        <button class="btn sm danger" onclick="dDeletePhoto('${p.id}')">מחיקה</button>
+      </div></div>`;
+    g.appendChild(d);
+  });
+
+  const rl = document.getElementById("d-reviewsList"); rl.innerHTML="";
+  S.reviews.forEach(r=>{
+    const d=document.createElement("div"); d.className="rev-row";
+    d.innerHTML = `<div class="thumb-row">${r.img?`<img class="thumb" src="${r.img}">`:""}<strong>${r.name}</strong></div>
+      <p style="margin-bottom:8px">${r.text}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="dEditReview('${r.id}')">עריכה</button>
+        <button class="btn sm" onclick="dPickReviewPhoto('${r.id}')">${r.img?"החלפת תמונה":"הוספת תמונה"}</button>
+        ${r.img?`<button class="btn sm" onclick="dRemoveReviewPhoto('${r.id}')">הסרת תמונה</button>`:""}
+        <button class="btn sm danger" onclick="dDeleteReview('${r.id}')">מחיקת המלצה</button>
+      </div>`;
+    rl.appendChild(d);
+  });
+}
+function dSaveBranding(){ S.bizName=document.getElementById("d-bizName").value.trim()||S.bizName;
+  S.bizSub=document.getElementById("d-bizSub").value.trim()||S.bizSub; saveState(); render(); }
+function dChangeImage(target){
+  fileToDataUrl(url=>{
+    if(target==="hero") S.hero=url;
+    else if(target==="about") S.about.img=url;
+    else if(target.startsWith("card:")) S.cards[target.split(":")[1]]=url;
+    saveState(); render(); fillDashboard();
+  });
+}
+function dAddCategory(){
+  const inp=document.getElementById("d-newCat"); const v=inp.value.trim();
+  if(!v) return; if(S.categories.includes(v)) return alert("קטגוריה כבר קיימת");
+  S.categories.push(v); inp.value=""; saveState(); render(); fillDashboard();
+}
+function dRenameCategory(old){
+  const nv = prompt("שם קטגוריה חדש:", old); if(!nv || nv===old) return;
+  S.categories = S.categories.map(c=>c===old?nv:c);
+  S.gallery.forEach(p=>{ if(p.cat===old) p.cat=nv; });
+  saveState(); render(); fillDashboard();
+}
+function dDeleteCategory(cat){
+  if(S.categories.length<=1) return alert("חייבת להישאר קטגוריה אחת לפחות");
+  if(!confirm("מחיקת קטגוריה תעביר את התמונות שלה לקטגוריה הראשונה. להמשיך?")) return;
+  const fallback = S.categories.find(c=>c!==cat);
+  S.gallery.forEach(p=>{ if(p.cat===cat) p.cat=fallback; });
+  S.categories = S.categories.filter(c=>c!==cat);
+  saveState(); render(); fillDashboard();
+}
+function dUploadPhotos(){
+  const cat = document.getElementById("d-uploadCat").value;
+  fileToDataUrl(urls=>{ urls.forEach(u=>S.gallery.push({id:"p"+Date.now()+Math.random().toString(36).slice(2,6), cat, src:u}));
+    saveState(); render(); fillDashboard(); }, true);
+}
+function dReplacePhoto(id){ fileToDataUrl(url=>{ const p=S.gallery.find(x=>x.id===id); p.src=url; saveState(); render(); fillDashboard(); }); }
+function dDeletePhoto(id){ if(!confirm("למחוק תמונה?")) return; S.gallery=S.gallery.filter(x=>x.id!==id); saveState(); render(); fillDashboard(); }
+function dMovePhoto(id,dir){
+  const i = S.gallery.findIndex(x=>x.id===id); const cat=S.gallery[i].cat;
+  let j=i+dir;
+  while(j>=0 && j<S.gallery.length && S.gallery[j].cat!==cat) j+=dir;
+  if(j<0||j>=S.gallery.length) return;
+  [S.gallery[i],S.gallery[j]]=[S.gallery[j],S.gallery[i]];
+  saveState(); render(); fillDashboard();
+}
+function dSaveAbout(){ S.about.text=document.getElementById("d-aboutText").value.trim(); saveState(); render(); }
+function dSaveRevDir(){ S.reviewsDir=document.getElementById("d-revDir").value; saveState(); render(); }
+function dAddReview(){
+  const name=document.getElementById("d-newRevName").value.trim();
+  const text=document.getElementById("d-newRevText").value.trim();
+  if(!name||!text) return alert("יש למלא שם ותוכן המלצה");
+  const img = document.getElementById("d-newRevThumb").dataset.url || null;
+  S.reviews.push({id:"r"+Date.now(), name, text, img});
+  document.getElementById("d-newRevName").value=""; document.getElementById("d-newRevText").value="";
+  document.getElementById("d-newRevThumb").src=""; document.getElementById("d-newRevThumb").removeAttribute("data-url");
+  saveState(); render(); fillDashboard();
+}
+function dPickReviewPhoto(id){
+  fileToDataUrl(url=>{
+    if(id==="new"){ document.getElementById("d-newRevThumb").src=url; document.getElementById("d-newRevThumb").dataset.url=url; return; }
+    const r=S.reviews.find(x=>x.id===id); r.img=url; saveState(); render(); fillDashboard();
+  });
+}
+function dRemoveReviewPhoto(id){ const r=S.reviews.find(x=>x.id===id); r.img=null; saveState(); render(); fillDashboard(); }
+function dEditReview(id){
+  const r=S.reviews.find(x=>x.id===id);
+  const name=prompt("שם:", r.name); if(name===null) return;
+  const text=prompt("תוכן:", r.text); if(text===null) return;
+  r.name=name; r.text=text; saveState(); render(); fillDashboard();
+}
+function dDeleteReview(id){ if(!confirm("למחוק המלצה?")) return; S.reviews=S.reviews.filter(x=>x.id!==id); saveState(); render(); fillDashboard(); }
+function dSaveContact(){
+  S.contact.phone=document.getElementById("d-phone").value.trim()||S.contact.phone;
+  S.contact.wa=document.getElementById("d-wa").value.trim().replace(/\D/g,"")||S.contact.wa;
+  S.contact.ig=document.getElementById("d-ig").value.trim();
+  S.contact.fb=document.getElementById("d-fb").value.trim();
+  saveState(); render();
+}
+function dSaveA11yStatement(){ S.a11yStatement=document.getElementById("d-a11yStatement").value.trim(); saveState(); render(); }
+
+/* ============ INIT ============ */
+window.addEventListener("load", async ()=>{
+  loadA11y();
+  await loadState();
+  render();
+  if(window.google && google.accounts){
+    google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:onGoogleSignIn });
+    google.accounts.id.renderButton(document.getElementById("googleBtnWrap"), {theme:"outline", size:"medium", text:"signin_with", locale:"he"});
+  }
+});
+</script>
+</body>
+</html>
